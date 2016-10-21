@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">AulaFirebase</string>
+
+    <string-array name="aplicativos">
+        <item>Aplicativos</item>
+        <item>Arduino</item>
+        <item>Hardware</item>
+        <item>Web</item>
+        <item>Banco de dados</item>
+        <item>C#</item>
+        <item>JAVA</item>
+        <item>javascript</item>
+        <item>Android</item>
+    </string-array>
+
 </resources>
