@@ -1,25 +1,54 @@
 package study.android.aulafirebase;
 
+import android.*;
+import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.oceanbrasil.libocean.Ocean;
+import com.oceanbrasil.libocean.control.glide.GlideRequest;
+import com.oceanbrasil.libocean.control.glide.ImageDelegate;
 
-public class MainActivity extends AppCompatActivity {
+import java.io.File;
+
+import java.util.Date;
+
+public class MainActivity extends AppCompatActivity implements ImageDelegate.BytesListener {
 
     private EditText edNome, edAutor, edPaginas, edAno;
+    private ImageView imgLivro;
     private Spinner sCategoria;
     private Livro livro;
+    private File caminhoDaImagem;
+
+    private static final String[] PERMISSIONS_READ_WRITE = {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    public static final int REQUEST_PERMISSION = 3;
+
+    private byte bytesDaImagem[];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +61,13 @@ public class MainActivity extends AppCompatActivity {
         edAno = (EditText) findViewById(R.id.edAno);
         edPaginas = (EditText) findViewById(R.id.edPaginas);
         sCategoria = (Spinner) findViewById(R.id.spinner);
+        imgLivro = (ImageView) findViewById(R.id.imgTopo);
+        imgLivro.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                abrirCamera();
+            }
+        });
 
     }
 
@@ -59,35 +95,96 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void salvarLivro() {
-        final ProgressDialog progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage("Enviando Livros...");
-        progressDialog.show();
 
-        String titulo = edNome.getText().toString();
-        String autor = edAutor.getText().toString();
-        int ano = Integer.parseInt(edAno.getText().toString());
-        int paginas = Integer.parseInt(edPaginas.getText().toString());
-        String categoria = sCategoria.getSelectedItem().toString();
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        StorageReference storageRef = storage.getReferenceFromUrl("gs://testeaulafirebase.appspot.com").child("livroimages").child(caminhoDaImagem.getName());
+        storageRef.putBytes(bytesDaImagem);
+
+//        final ProgressDialog progressDialog = new ProgressDialog(this);
+//        progressDialog.setMessage("Enviando Livros...");
+//        progressDialog.show();
+//
+//        String titulo = edNome.getText().toString();
+//        String autor = edAutor.getText().toString();
+//        int ano = Integer.parseInt(edAno.getText().toString());
+//        int paginas = Integer.parseInt(edPaginas.getText().toString());
+//        String categoria = sCategoria.getSelectedItem().toString();
+//
+//
+//        livro = new Livro(titulo, autor, paginas, ano, categoria);
+//
+//        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("livros");
+//        reference.push().setValue(livro).addOnCompleteListener(this, new OnCompleteListener<Void>() {
+//            @Override
+//            public void onComplete(@NonNull Task<Void> task) {
+//                if (task.isSuccessful()) {
+//                    progressDialog.dismiss();
+//                    limparCampos();
+//
+//                } else {
+//                    progressDialog.dismiss();
+//
+//                }
+//            }
+//        });
 
 
-        livro = new Livro(titulo, autor, paginas, ano, categoria);
+    }
 
-        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("livros");
-        reference.push().setValue(livro).addOnCompleteListener(this, new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                if (task.isSuccessful()) {
-                    progressDialog.dismiss();
-                    limparCampos();
+    private void intentAbrirCamera(){
+        String nomeFoto = DateFormat.format("yyyy-MM-dd_hhmmss", new Date()).toString()+"firebase.jpg";
+        caminhoDaImagem = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), nomeFoto);
 
-                } else {
-                    progressDialog.dismiss();
+        Intent it = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        it.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(caminhoDaImagem));
+        startActivityForResult(it, REQUEST_PERMISSION);
 
-                }
+
+
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_PERMISSION && resultCode == RESULT_OK){
+            if (caminhoDaImagem != null && caminhoDaImagem.exists()){
+                Ocean.glide(this)
+                        .load(Uri.fromFile(caminhoDaImagem))
+                        .build(GlideRequest.BYTES)
+                        .addDelegateImageBytes(this)
+                        .toBytes(300, 300);
+            }else{
+                Log.e("Ale","FILE null");
             }
-        });
+        }else{
+            Log.d("Ale","nao usou a camera");
+        }
+    }
 
+    private void verificaChamarPermissao() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE) || ActivityCompat.shouldShowRequestPermissionRationale(this,
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            // exibir o motivo de esta precisando da permissao
+            ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS_READ_WRITE, REQUEST_PERMISSION);
+        } else {
+            ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS_READ_WRITE, REQUEST_PERMISSION);
+        }
+    }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+        if (requestCode == REQUEST_PERMISSION){
+            if (PermissionUtil.verifyPermissions(grantResults)) {
+                // tem
+                Log.d("Ale","tem permissao");
+                intentAbrirCamera();
+            } else {
+                // nao tem a permissao
+                Log.d("Ale","nao tem permissao");
+            }
+        }else{
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
     }
 
     void limparCampos() {
@@ -98,6 +195,19 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+    private void abrirCamera(){
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            verificaChamarPermissao();
+        } else {
+            // tenho permissao, chama a intent de camera
+            intentAbrirCamera();
+        }
+    }
+
 
 
     //    public void testeFirebase(View v){
@@ -148,8 +258,34 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public void createdImageBytes(byte[] bytes) {
+        bytesDaImagem = bytes;
+        Bitmap bitmap = Ocean.byteToBitmap(bytes);
+        imgLivro.setImageBitmap(bitmap);
 
+    }
+
+    public abstract static class PermissionUtil {
+
+        public static boolean verifyPermissions(int[] grantResults) {
+            // At least one result must be checked.
+            if(grantResults.length < 1){
+                return false;
+            }
+
+            // Verify that each required permission has been granted, otherwise return false.
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+    }
 }
+
 
 
 
