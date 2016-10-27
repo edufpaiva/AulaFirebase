@@ -7,7 +7,7 @@ import java.io.Serializable;
  */
 
 public class Livro implements Serializable {
-    //private String capa;
+    private String capa;
     private String titulo;
     private String autor;
     private int paginas;
@@ -23,6 +23,14 @@ public class Livro implements Serializable {
         this.categoria = categoria;
     }
 
+    public Livro(String titulo, String autor, int paginas, int ano, String categoria, String capa) {
+        this.capa = capa;
+        this.titulo = titulo;
+        this.autor = autor;
+        this.paginas = paginas;
+        this.ano = ano;
+        this.categoria = categoria;
+    }
 
     public Livro(){
 
@@ -30,13 +38,13 @@ public class Livro implements Serializable {
     }
 
 
-//    public String getCapa() {
-//        return capa;
-//    }
+    public String getCapa() {
+        return capa;
+    }
 
-//    public void setCapa(String capa) {
-//        this.capa = capa;
-//    }
+    public void setCapa(String capa) {
+        this.capa = capa;
+    }
 
     public String getTitulo() {
         return titulo;

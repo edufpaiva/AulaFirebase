@@ -24,11 +24,14 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.oceanbrasil.libocean.Ocean;
 import com.oceanbrasil.libocean.control.glide.GlideRequest;
 import com.oceanbrasil.libocean.control.glide.ImageDelegate;
@@ -98,35 +101,59 @@ public class MainActivity extends AppCompatActivity implements ImageDelegate.Byt
 
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReferenceFromUrl("gs://testeaulafirebase.appspot.com").child("livroimages").child(caminhoDaImagem.getName());
-        storageRef.putBytes(bytesDaImagem);
+        storageRef.putBytes(bytesDaImagem).addOnSuccessListener(this, new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                Log.d("Aula",taskSnapshot.getDownloadUrl().toString());
 
-//        final ProgressDialog progressDialog = new ProgressDialog(this);
-//        progressDialog.setMessage("Enviando Livros...");
-//        progressDialog.show();
-//
-//        String titulo = edNome.getText().toString();
-//        String autor = edAutor.getText().toString();
-//        int ano = Integer.parseInt(edAno.getText().toString());
-//        int paginas = Integer.parseInt(edPaginas.getText().toString());
-//        String categoria = sCategoria.getSelectedItem().toString();
-//
-//
-//        livro = new Livro(titulo, autor, paginas, ano, categoria);
-//
-//        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("livros");
-//        reference.push().setValue(livro).addOnCompleteListener(this, new OnCompleteListener<Void>() {
-//            @Override
-//            public void onComplete(@NonNull Task<Void> task) {
-//                if (task.isSuccessful()) {
-//                    progressDialog.dismiss();
-//                    limparCampos();
-//
-//                } else {
-//                    progressDialog.dismiss();
-//
-//                }
-//            }
-//        });
+                criaLivro(taskSnapshot.getDownloadUrl().toString());
+
+
+
+
+
+            }
+        }).addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d("Aula",e.getMessage());
+            }
+        });
+
+
+
+
+    }
+
+
+    private void criaLivro(String imgURL){
+        final ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Enviando Livros...");
+        progressDialog.show();
+
+        String titulo = edNome.getText().toString();
+        String autor = edAutor.getText().toString();
+        int ano = Integer.parseInt(edAno.getText().toString());
+        int paginas = Integer.parseInt(edPaginas.getText().toString());
+        String categoria = sCategoria.getSelectedItem().toString();
+
+
+        livro = new Livro(titulo, autor, paginas, ano, categoria, imgURL);
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("livros");
+        reference.push().setValue(livro).addOnCompleteListener(this, new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (task.isSuccessful()) {
+                    progressDialog.dismiss();
+                    limparCampos();
+
+                } else {
+                    progressDialog.dismiss();
+
+                }
+            }
+        });
 
 
     }
@@ -192,6 +219,12 @@ public class MainActivity extends AppCompatActivity implements ImageDelegate.Byt
         edAutor.setText("");
         edAno.setText("");
         edPaginas.setText("");
+            Ocean.
+                glide(this).
+                load(R.mipmap.ic_launcher).
+                build(GlideRequest.BITMAP).
+                into(imgLivro);
+
 
 
     }
