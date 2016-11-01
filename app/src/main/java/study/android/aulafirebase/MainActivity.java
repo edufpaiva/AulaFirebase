@@ -99,6 +99,8 @@ public class MainActivity extends AppCompatActivity implements ImageDelegate.Byt
 
     private void salvarLivro() {
 
+
+
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReferenceFromUrl("gs://testeaulafirebase.appspot.com").child("livroimages").child(caminhoDaImagem.getName());
         storageRef.putBytes(bytesDaImagem).addOnSuccessListener(this, new OnSuccessListener<UploadTask.TaskSnapshot>() {
@@ -107,10 +109,6 @@ public class MainActivity extends AppCompatActivity implements ImageDelegate.Byt
                 Log.d("Aula",taskSnapshot.getDownloadUrl().toString());
 
                 criaLivro(taskSnapshot.getDownloadUrl().toString());
-
-
-
-
 
             }
         }).addOnFailureListener(this, new OnFailureListener() {
@@ -129,6 +127,7 @@ public class MainActivity extends AppCompatActivity implements ImageDelegate.Byt
     private void criaLivro(String imgURL){
         final ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Enviando Livros...");
+        progressDialog.setCancelable(false);
         progressDialog.show();
 
         String titulo = edNome.getText().toString();
@@ -155,6 +154,16 @@ public class MainActivity extends AppCompatActivity implements ImageDelegate.Byt
             }
         });
 
+
+
+
+
+    }
+
+    private void setListaView(){
+
+        Intent intent = new Intent(this, ListaFirebase.class);
+        startActivity(intent);
 
     }
 
@@ -225,6 +234,7 @@ public class MainActivity extends AppCompatActivity implements ImageDelegate.Byt
                 build(GlideRequest.BITMAP).
                 into(imgLivro);
 
+        setListaView();
 
 
     }
